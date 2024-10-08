@@ -1,0 +1,84 @@
+
+using System;
+using System.Data;
+using System.Data.OleDb;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using Newtonsoft.Json;
+namespace ARC_SS.DataHandler
+{
+    internal class Data_Handler
+    {
+        private string connectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + Application.StartupPath +   "\\ARC_SS_DB.accdb;";
+        
+
+        
+        
+
+        public DataTable GetData(string sql)
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                OleDbConnection con = new OleDbConnection(connectionString);
+                OleDbCommand cmd = new OleDbCommand();
+                con.Open();
+                cmd.Connection = con;
+                cmd.CommandText = sql;
+                dt.Load(cmd.ExecuteReader());                    
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + Environment.NewLine     + ex.StackTrace);
+                return dt;
+            }
+        }
+        
+        public void UpdateDataTable(string tbName , DataTable mst , DataTable chld_V  , DataTable chld_H)
+        {
+            string Sql = "Insert into " + tbName ;
+            List<string> cols = new List<string>();
+            List<string> values = new List<string>();
+             
+            
+            OleDbCommand cmd = new OleDbCommand();
+            OleDbConnection con = new OleDbConnection(connectionString);
+            con.Open();
+            cmd.Connection = con;
+
+            for (int j = 0; j < mst.Rows.Count; j++)
+            {
+                for (int i = 0; i<mst.Columns.Count ; i++) 
+                {
+                    if (mst.Columns[i].ColumnName.ToUpper() != "ID")
+                    {
+                        cmd.Parameters.AddWithValue("@" + mst.Columns[i].ColumnName, mst.Rows[j][i]);
+                        cols.Add(mst.Columns[i].ColumnName);
+                        values.Add("@" + mst.Columns[i].ColumnName);
+                    }
+                    
+                }
+                if (Convert.ToInt32(mst.Rows[j]["ID"]) == 0)
+                {
+                    cmd.CommandText = Sql
+                                        + "(" + string.Join(",", cols.ToArray()) + ")"
+                                        + "values(" + string.Join(",", values.ToArray()) + ")";
+                }
+                else
+                {
+                    Sql = "Update " + tbName + " set ";
+                    foreach (OleDbParameter para in cmd.Parameters)
+                    {
+                        Sql = Sql + para.ParameterName.Remove(0) + "=" + para.ParameterName;
+                    }
+                    Sql = Sql + " Where Id = @ID";
+                    cmd.CommandText = Sql;
+                }
+                Debug.Print(cmd.CommandText);
+                cmd.ExecuteNonQuery();
+            }
+
+        }
+    }
+}
