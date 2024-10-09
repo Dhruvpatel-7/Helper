@@ -1,0 +1,80 @@
+using ARC_SS.DataHandler;
+using System;
+using System.Data;
+using System.Text;
+using System.Windows.Forms;
+
+
+namespace ARC_SS
+{
+    public partial class frmJobFetch : Form
+    {
+        public int GetJobId { get; set; }
+        public frmJobFetch()
+        {
+            InitializeComponent();
+        }
+        private void frmJobFetch_Load(object sender, EventArgs e)
+        {
+            LoadJobData();
+        }
+        private void LoadJobData()
+        {
+            DataTable dt_Mst = new DataTable();
+            Data_Handler data_Handler = new Data_Handler();
+            dt_Mst = data_Handler.GetData("SELECT * FROM JOB_Mst");
+
+            if (dt_Mst.Rows.Count > 0)
+            {
+                dgvJobSelect.DataSource = dt_Mst;
+            }
+            else
+            {
+                MessageBox.Show("Job Data Not Found");
+            }
+        }
+        private void btnAddNewJob_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+            this.GetJobId = 0;
+        }
+        private void btnUpdateJob_Click(object sender, EventArgs e)
+        {
+            if (dgvJobSelect.SelectedRows.Count > 0)
+            {
+                this.GetJobId = Convert.ToInt32(dgvJobSelect.SelectedRows[0].Cells["Id"].Value);
+                this.DialogResult = DialogResult.OK;
+            }
+            else
+            {
+                MessageBox.Show("Please select rows");
+            }
+        }
+        private void btnDeleteJob_Click(object sender, EventArgs e)
+        {
+            if (dgvJobSelect.SelectedRows.Count > 0)
+            {
+                this.GetJobId = Convert.ToInt32(dgvJobSelect.SelectedRows[0].Cells["Id"].Value);
+                DeleteJobRecords(GetJobId);
+                MessageBox.Show("Job Deleted SuccessFully");
+                LoadJobData();
+            }
+            else
+            {
+                MessageBox.Show("Please select rows");
+            }
+        }
+        private void DeleteJobRecords(int idToDelete)
+        {
+            Data_Handler data_Handler = new Data_Handler();
+
+            data_Handler.DeleteRecords("JOB_Det_H", "Mst_Id", idToDelete);
+            data_Handler.DeleteRecords("JOB_Det_V", "Mst_Id", idToDelete);
+            data_Handler.DeleteRecords("JOB_Mst", "ID", idToDelete);
+        }
+        private void btn_Cancel_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+    }
+}

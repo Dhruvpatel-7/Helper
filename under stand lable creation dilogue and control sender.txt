@@ -1,0 +1,68 @@
+private void btnSave_Click(object sender, EventArgs e)
+{
+    string jobCode = lblJobCode.Text;
+    string jobName = lblJobName.Text;
+    string cylCircum = lblCylCircum.Text;
+    string rubRollCircum = lblRubRollCircum.Text;
+    string minBase = lblMinBase.Text;
+    string markWidth = lblMarkWidth.Text;
+    string markHeight = lblMarkHeight.Text;
+    var dataHandler = new Data_Handler();
+
+    if (dt_Mst != null)
+    {
+        try
+        {
+            RetrieveAndAddData(pnlGroup);
+            MessageBox.Show("Database SuccessFully");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving job data: {ex.Message}");
+        }
+    }
+}
+private void ResetLabels()
+{
+    foreach (Control control in pnlGroup.Controls)
+    {
+        if (control is Label label)
+        {
+            label.Text = "0";
+        }
+    }
+}
+private void SubscribeToLabelClicks(Panel panel)
+{
+    foreach (Control control in panel.Controls)
+    {
+        if (control is Label label)
+        {
+            label.Click += lbl_MaSl2_Click;
+        }
+        else if (control is Button button)
+        {
+            button.Click += btn_MS_AllSet_Click;
+        }
+    }
+}
+private void lbl_MaSl2_Click(object sender, EventArgs e)
+{
+    frmKeyBoard key = new frmKeyBoard();
+
+    var result = key.ShowDialog();
+    if (result == DialogResult.OK)
+    {
+        ((Label)(sender)).Text = key.rtnValue;
+    }
+}
+private void btn_MS_AllSet_Click(object sender, EventArgs e)
+{
+    string _tag = ((Button)sender).Tag.ToString();
+    for (int i = 3; i < 12; i++)
+    {
+        Control cntrl = pnlGroup.Controls.Find("lbl_" + _tag + "_" + i.ToString(), true)[0];
+        cntrl.Text = pnlGroup.Controls.Find("lbl_" + _tag + "_2", true)[0].Text;
+    }
+
+}
