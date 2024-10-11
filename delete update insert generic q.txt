@@ -1,0 +1,107 @@
+private void btnDeleteJob_Click(object sender, EventArgs e)
+{
+    
+    if (dgvJobSelect.SelectedRows.Count > 0)
+    {
+        DialogResult = DialogResult.OK;
+        this.GetJobId = Convert.ToInt32(dgvJobSelect.SelectedRows[0].Cells["Id"].Value) * -1;
+    }
+    else
+    {
+        MessageBox.Show("Please select rows");
+    }public void DeleteTableData(string sql)
+{
+    OleDbConnection con = new OleDbConnection(connectionString);
+    OleDbCommand cmd = new OleDbCommand();
+    con.Open();
+    cmd.Connection = con;
+    cmd.CommandText = sql;
+    con.Close();
+    con.Dispose();
+    cmd.Dispose();
+    
+}
+public int InsertOrUpdateTable(string tbName , DataTable mst  , int foreignKey = 0)
+{
+    string Sql = "Insert into " + tbName ;
+    int Mst_ID = 0;
+    List<string> cols = new List<string>();
+    List<string> values = new List<string>();
+    List<string> UpdateValues = new List<string>();
+    
+    OleDbCommand cmd = new OleDbCommand();
+    OleDbConnection con = new OleDbConnection(connectionString);
+    con.Open();
+    cmd.Connection = con;
+    OleDbTransaction trans = con.BeginTransaction(IsolationLevel.ReadCommitted);
+    cmd.Transaction = trans;
+    try
+    {
+        
+        for (int j = 0; j < mst.Rows.Count; j++)
+        {
+            bool insert = false;
+            insert = Convert.ToInt32(mst.Rows[j]["Id"]) == 0;
+            if (foreignKey > 0)
+            {
+                mst.Rows[j]["Mst_Id"] = foreignKey;
+            }
+            cmd.Parameters.Clear();
+            cols.Clear();
+            values.Clear();
+            UpdateValues.Clear();
+            for (int i = 0; i < mst.Columns.Count; i++)
+            {
+                if ((mst.Columns[i].ColumnName.ToUpper() != "ID") && (mst.Columns[i].ColumnName.ToUpper() == "DEFAULT"))
+                {
+                    cmd.Parameters.AddWithValue("@" + mst.Columns[i].ColumnName, mst.Rows[j][i]);
+                    cols.Add(mst.Columns[i].ColumnName);
+                    values.Add("@" + mst.Columns[i].ColumnName);
+                }
+            }
+            if (insert == true)
+            {
+                cmd.CommandText = Sql
+                                    + "(" + string.Join(",", cols.ToArray()) + ")"
+                                    + "values(" + string.Join(",", values.ToArray()) + ")";
+                cmd.ExecuteNonQuery();
+                cmd.CommandText = "SELECT @@IDENTITY";
+                Mst_ID = Convert.ToInt32(cmd.ExecuteScalar());
+            }
+            else
+            {
+                Sql = "Update " + tbName + " set ";
+                foreach (OleDbParameter para in cmd.Parameters)
+                {
+                    //Sql = Sql + para.ParameterName.Replace("@","") + "=" + para.ParameterName + ",";
+                    UpdateValues.Add(para.ParameterName.Replace("@", "") + "=" + para.ParameterName);
+                }
+                Sql = Sql + string.Join(",", UpdateValues.ToArray());
+                cmd.Parameters.AddWithValue("@ID", mst.Rows[j]["Id"]);
+                Sql = Sql + " Where Id = @ID";
+                cmd.CommandText = Sql;
+                cmd.ExecuteNonQuery();
+                Mst_ID = Convert.ToInt32(mst.Rows[0]["Id"]);
+
+            }
+            
+        }
+        trans.Commit();
+        con.Close();
+        con.Dispose();
+        cmd.Dispose();
+        return Mst_ID;
+    }
+    catch (Exception ex)
+    {
+        trans.Rollback();
+        con.Close();
+        con.Dispose();
+        cmd.Dispose();
+        MessageBox.Show(ex.Message + Environment.NewLine + ex.StackTrace);
+        return -1;
+        
+        
+    }
+    
+}
